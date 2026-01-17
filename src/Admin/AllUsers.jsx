@@ -1,0 +1,620 @@
+// import React, { useState } from "react";
+// import { Edit, Search, Trash, UserPlus } from "lucide-react";
+
+// const AllUsers = () => {
+//   const [search, setSearch] = useState("");
+
+//   const users = [
+//     { name: "Aman Sharma", email: "aman@gmail.com", role: "Admin" },
+//     { name: "Priya Singh", email: "priya@gmail.com", role: "Teacher" },
+//     { name: "Rohit Verma", email: "rohit@gmail.com", role: "Student" },
+//     { name: "Sara Malik", email: "sara@gmail.com", role: "Student" },
+//   ];
+
+//   const filteredUsers = users.filter((u) =>
+//     u.name.toLowerCase().includes(search.toLowerCase())
+//   );
+
+//   const roleColor = (role) => {
+//     if (role === "Admin") return "bg-red-100 text-red-600";
+//     if (role === "Teacher") return "bg-blue-100 text-blue-600";
+//     return "bg-green-100 text-green-600";
+//   };
+
+//   return (
+//     <div className="p-6 space-y-6">
+//       {/* Header */}
+//       <div className="flex justify-between items-center">
+//         <h1 className="text-2xl font-bold text-slate-100">Users</h1>
+//         <button className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-500 transition">
+//           <UserPlus size={18} />
+//           Add user
+//         </button>
+//       </div>
+
+//       {/* Search */}
+//       <div className="relative w-full md:w-1/3">
+//         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+//         <input
+//           type="text"
+//           placeholder="Search users..."
+//           className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+//           value={search}
+//           onChange={(e) => setSearch(e.target.value)}
+//         />
+//       </div>
+
+//       {/* Table */}
+//       <div className="overflow-x-auto">
+//         <table className="w-full border-collapse bg-slate-900/80 rounded-xl overflow-hidden border border-slate-800 text-sm">
+//           <thead className="bg-slate-900">
+//             <tr>
+//               <th className="p-4 text-left text-slate-300">Name</th>
+//               <th className="p-4 text-left text-slate-300">Email</th>
+//               <th className="p-4 text-left text-slate-300">Role</th>
+//               <th className="p-4 text-left text-slate-300">Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {filteredUsers.map((user, idx) => (
+//               <tr
+//                 key={idx}
+//                 className="border-t border-slate-800 hover:bg-slate-800/70 transition"
+//               >
+//                 <td className="p-4 text-slate-100">{user.name}</td>
+//                 <td className="p-4 text-slate-300">{user.email}</td>
+//                 <td className="p-4">
+//                   <span
+//                     className={`px-3 py-1 text-xs rounded-full font-medium ${roleColor(
+//                       user.role
+//                     )}`}
+//                   >
+//                     {user.role}
+//                   </span>
+//                 </td>
+//                 <td className="p-4 flex gap-3">
+//                   <button className="text-blue-400 hover:text-blue-300">
+//                     <Edit size={18} />
+//                   </button>
+//                   <button className="text-red-400 hover:text-red-300">
+//                     <Trash size={18} />
+//                   </button>
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default AllUsers;
+// import React, { useEffect, useState } from "react";
+// import { Edit, Search, Trash, UserPlus } from "lucide-react";
+// import userService from "../services/userService";
+
+// const AllUsers = () => {
+//   const [search, setSearch] = useState("");
+//   const [users, setUsers] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+
+//   // ✅ ADD (modal + form)
+//   const [showAddUser, setShowAddUser] = useState(false);
+//   const [formData, setFormData] = useState({
+//     displayName: "",
+//     email: "",
+//     password: "",
+//     roles: "ROLE_STUDENT",
+//   });
+
+//   // ✅ FETCH USERS
+//   useEffect(() => {
+//     const fetchUsers = async () => {
+//       try {
+//         const res = await userService.getUsers(0, 50);
+//         setUsers(res.data.content);
+//       } catch (err) {
+//         console.error(err);
+//         setError("Failed to load users");
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchUsers();
+//   }, []);
+
+//   // ✅ SEARCH
+//   const filteredUsers = users.filter((u) =>
+//     u.displayName?.toLowerCase().includes(search.toLowerCase())
+//   );
+
+//   const roleColor = (role) => {
+//     if (role === "ROLE_ADMIN") return "bg-red-100 text-red-600";
+//     if (role === "ROLE_TRAINER") return "bg-blue-100 text-blue-600";
+//     return "bg-green-100 text-green-600";
+//   };
+
+//   // ✅ DELETE USER
+//   const handleDelete = async (id) => {
+//     if (!window.confirm("Delete this user?")) return;
+
+//     try {
+//       await userService.deleteUser(id);
+//       setUsers((prev) => prev.filter((u) => u.id !== id));
+//     } catch (err) {
+//       console.error(err);
+//       alert("Failed to delete user");
+//     }
+//   };
+
+//   // ✅ ADD USER (2-step backend flow)
+//   // ✅ ADD USER (CORRECT ADMIN FLOW)
+//   const handleAddUser = async (e) => {
+//     e.preventDefault();
+
+//     try {
+//       // ✅ SINGLE CALL – USER SERVICE HANDLES AUTH INTERNALLY
+//       const res = await userService.createUser({
+//         email: formData.email,
+//         password: formData.password,
+//         displayName: formData.displayName,
+//         roles: formData.roles,
+//         tenantId: "default",
+//       });
+
+//       // ✅ UPDATE UI
+//       setUsers((prev) => [res.data, ...prev]);
+//       setShowAddUser(false);
+//       setFormData({
+//         displayName: "",
+//         email: "",
+//         password: "",
+//         roles: "ROLE_STUDENT",
+//       });
+//     } catch (err) {
+//       console.error(err);
+//       alert("Failed to create user");
+//     }
+//   };
+
+//   if (loading) return <p className="p-6 text-slate-300">Loading users...</p>;
+//   if (error) return <p className="p-6 text-red-400">{error}</p>;
+
+//   return (
+//     <div className="p-6 space-y-6">
+//       {/* Header */}
+//       <div className="flex justify-between items-center">
+//         <h1 className="text-2xl font-bold text-slate-100">Users</h1>
+//         <button
+//           onClick={() => setShowAddUser(true)} // ✅ ADD
+//           className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-500 transition"
+//         >
+//           <UserPlus size={18} />
+//           Add user
+//         </button>
+//       </div>
+
+//       {/* Search */}
+//       <div className="relative w-full md:w-1/3">
+//         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+//         <input
+//           type="text"
+//           placeholder="Search users..."
+//           className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+//           value={search}
+//           onChange={(e) => setSearch(e.target.value)}
+//         />
+//       </div>
+
+//       {/* Table */}
+//       <div className="overflow-x-auto">
+//         <table className="w-full border-collapse bg-slate-900/80 rounded-xl overflow-hidden border border-slate-800 text-sm">
+//           <thead className="bg-slate-900">
+//             <tr>
+//               <th className="p-4 text-left text-slate-300">Name</th>
+//               <th className="p-4 text-left text-slate-300">Email</th>
+//               <th className="p-4 text-left text-slate-300">Role</th>
+//               <th className="p-4 text-left text-slate-300">Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {filteredUsers.map((user) => (
+//               <tr
+//                 key={user.id}
+//                 className="border-t border-slate-800 hover:bg-slate-800/70 transition"
+//               >
+//                 <td className="p-4 text-slate-100">{user.displayName}</td>
+//                 <td className="p-4 text-slate-300">{user.email}</td>
+//                 <td className="p-4">
+//                   <span
+//                     className={`px-3 py-1 text-xs rounded-full font-medium ${roleColor(
+//                       user.roles
+//                     )}`}
+//                   >
+//                     {user.roles?.replace("ROLE_", "")}
+//                   </span>
+//                 </td>
+//                 <td className="p-4 flex gap-3">
+//                   <button className="text-blue-400 hover:text-blue-300">
+//                     <Edit size={18} />
+//                   </button>
+//                   <button
+//                     className="text-red-400 hover:text-red-300"
+//                     onClick={() => handleDelete(user.id)}
+//                   >
+//                     <Trash size={18} />
+//                   </button>
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* ✅ ADD USER MODAL */}
+//       {showAddUser && (
+//         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+//           <div className="bg-slate-900 rounded-xl p-6 w-full max-w-md border border-slate-700">
+//             <h2 className="text-xl font-bold text-slate-100 mb-4">Add User</h2>
+
+//             <form onSubmit={handleAddUser} className="space-y-4">
+//               <input
+//                 type="text"
+//                 placeholder="Name"
+//                 className="w-full px-4 py-2 rounded bg-slate-950 border border-slate-700 text-slate-100"
+//                 value={formData.displayName}
+//                 onChange={(e) =>
+//                   setFormData({ ...formData, displayName: e.target.value })
+//                 }
+//                 required
+//               />
+
+//               <input
+//                 type="email"
+//                 placeholder="Email"
+//                 className="w-full px-4 py-2 rounded bg-slate-950 border border-slate-700 text-slate-100"
+//                 value={formData.email}
+//                 onChange={(e) =>
+//                   setFormData({ ...formData, email: e.target.value })
+//                 }
+//                 required
+//               />
+
+//               <input
+//                 type="password"
+//                 placeholder="Password"
+//                 className="w-full px-4 py-2 rounded bg-slate-950 border border-slate-700 text-slate-100"
+//                 value={formData.password}
+//                 onChange={(e) =>
+//                   setFormData({ ...formData, password: e.target.value })
+//                 }
+//                 required
+//               />
+
+//               <select
+//                 className="w-full px-4 py-2 rounded bg-slate-950 border border-slate-700 text-slate-100"
+//                 value={formData.roles}
+//                 onChange={(e) =>
+//                   setFormData({ ...formData, roles: e.target.value })
+//                 }
+//               >
+//                 <option value="ROLE_STUDENT">Student</option>
+//                 <option value="ROLE_TRAINER">Trainer</option>
+//                 <option value="ROLE_ADMIN">Admin</option>
+//               </select>
+
+//               <div className="flex justify-end gap-3 pt-4">
+//                 <button
+//                   type="button"
+//                   onClick={() => setShowAddUser(false)}
+//                   className="px-4 py-2 rounded bg-slate-700 text-slate-200 hover:bg-slate-600"
+//                 >
+//                   Cancel
+//                 </button>
+//                 <button
+//                   type="submit"
+//                   className="px-4 py-2 rounded bg-violet-600 text-white hover:bg-violet-500"
+//                 >
+//                   Create
+//                 </button>
+//               </div>
+//             </form>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default AllUsers;
+import React, { useEffect, useState } from "react";
+import { Edit, Search, Trash, UserPlus } from "lucide-react";
+import userService from "../services/userService";
+
+const AllUsers = () => {
+  const [search, setSearch] = useState("");
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ✅ modal + form
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [editingUser, setEditingUser] = useState(null); // ✅ MISSING LOGIC
+
+  const [formData, setFormData] = useState({
+    displayName: "",
+    email: "",
+    password: "",
+    roles: "ROLE_STUDENT",
+  });
+
+  // ✅ FETCH USERS
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await userService.getUsers(0, 50);
+        setUsers(res.data.content);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load users");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  // ✅ SEARCH
+  const filteredUsers = users.filter((u) =>
+    u.displayName?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const roleColor = (role) => {
+    if (role === "ROLE_ADMIN") return "bg-red-100 text-red-600";
+    if (role === "ROLE_TRAINER") return "bg-blue-100 text-blue-600";
+    return "bg-green-100 text-green-600";
+  };
+
+  // ✅ DELETE USER
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this user?")) return;
+
+    try {
+      await userService.deleteUser(id);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete user");
+    }
+  };
+
+  // ✅ CREATE + EDIT (SAME MODAL)
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+
+    try {
+      let res;
+
+      if (editingUser) {
+        // ✅ EDIT USER
+        res = await userService.updateUser(editingUser.id, {
+          displayName: formData.displayName,
+          roles: formData.roles,
+        });
+
+        setUsers((prev) =>
+          prev.map((u) => (u.id === editingUser.id ? res.data : u))
+        );
+      } else {
+        // ✅ CREATE USER
+        res = await userService.createUser({
+          email: formData.email,
+          password: formData.password,
+          displayName: formData.displayName,
+          roles: formData.roles,
+          tenantId: "default",
+        });
+
+        setUsers((prev) => [res.data, ...prev]);
+      }
+
+      // ✅ RESET
+      setShowAddUser(false);
+      setEditingUser(null);
+      setFormData({
+        displayName: "",
+        email: "",
+        password: "",
+        roles: "ROLE_STUDENT",
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save user");
+    }
+  };
+
+  if (loading) return <p className="p-6 text-slate-300">Loading users...</p>;
+  if (error) return <p className="p-6 text-red-400">{error}</p>;
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-slate-100">Users</h1>
+        <button
+          onClick={() => {
+            setEditingUser(null); // ✅ reset
+            setFormData({
+              displayName: "",
+              email: "",
+              password: "",
+              roles: "ROLE_STUDENT",
+            });
+            setShowAddUser(true);
+          }}
+          className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-500 transition"
+        >
+          <UserPlus size={18} />
+          Add user
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="relative w-full md:w-1/3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search users..."
+          className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse bg-slate-900/80 rounded-xl overflow-hidden border border-slate-800 text-sm">
+          <thead className="bg-slate-900">
+            <tr>
+              <th className="p-4 text-left text-slate-300">Name</th>
+              <th className="p-4 text-left text-slate-300">Email</th>
+              <th className="p-4 text-left text-slate-300">Role</th>
+              <th className="p-4 text-left text-slate-300">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredUsers.map((user) => (
+              <tr
+                key={user.id}
+                className="border-t border-slate-800 hover:bg-slate-800/70 transition"
+              >
+                <td className="p-4 text-slate-100">{user.displayName}</td>
+                <td className="p-4 text-slate-300">{user.email}</td>
+                <td className="p-4">
+                  <span
+                    className={`px-3 py-1 text-xs rounded-full font-medium ${roleColor(
+                      user.roles
+                    )}`}
+                  >
+                    {user.roles?.replace("ROLE_", "")}
+                  </span>
+                </td>
+                <td className="p-4 flex gap-3">
+                  {/* ✅ EDIT LOGIC ADDED */}
+                  <button
+                    className="text-blue-400 hover:text-blue-300"
+                    onClick={() => {
+                      setEditingUser(user);
+                      setFormData({
+                        displayName: user.displayName,
+                        email: user.email,
+                        password: "",
+                        roles: user.roles,
+                      });
+                      setShowAddUser(true);
+                    }}
+                  >
+                    <Edit size={18} />
+                  </button>
+
+                  <button
+                    className="text-red-400 hover:text-red-300"
+                    onClick={() => handleDelete(user.id)}
+                  >
+                    <Trash size={18} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add / Edit Modal (UI UNCHANGED) */}
+      {showAddUser && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-xl p-6 w-full max-w-md border border-slate-700">
+            <h2 className="text-xl font-bold text-slate-100 mb-4">
+              {editingUser ? "Edit User" : "Add User"}
+            </h2>
+
+            <form onSubmit={handleAddUser} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Name"
+                className="w-full px-4 py-2 rounded bg-slate-950 border border-slate-700 text-slate-100"
+                value={formData.displayName}
+                onChange={(e) =>
+                  setFormData({ ...formData, displayName: e.target.value })
+                }
+                required
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                disabled={!!editingUser} // ✅ LOGIC ONLY
+                className="w-full px-4 py-2 rounded bg-slate-950 border border-slate-700 text-slate-100"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                required
+              />
+
+              {!editingUser && (
+                <input
+                  type="password"
+                  placeholder="Password"
+                  className="w-full px-4 py-2 rounded bg-slate-950 border border-slate-700 text-slate-100"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                />
+              )}
+
+              <select
+                className="w-full px-4 py-2 rounded bg-slate-950 border border-slate-700 text-slate-100"
+                value={formData.roles}
+                onChange={(e) =>
+                  setFormData({ ...formData, roles: e.target.value })
+                }
+              >
+                <option value="ROLE_STUDENT">Student</option>
+                <option value="ROLE_TRAINER">Trainer</option>
+                <option value="ROLE_ADMIN">Admin</option>
+              </select>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddUser(false);
+                    setEditingUser(null);
+                  }}
+                  className="px-4 py-2 rounded bg-slate-700 text-slate-200 hover:bg-slate-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-violet-600 text-white hover:bg-violet-500"
+                >
+                  {editingUser ? "Update" : "Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AllUsers;
