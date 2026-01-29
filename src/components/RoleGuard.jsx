@@ -1,23 +1,40 @@
 // import { Navigate, useLocation } from "react-router-dom";
 // import auth from "../auth";
 
-// const RoleGuard = ({ children }) => {
+// const RoleGuard = ({ children, allowedRoles = [] }) => {
 //   const location = useLocation();
-//   const currentRole = auth.getCurrentRole();      // "admin" / "student" / "trainer" / "business"
 
-//   // URL se target role nikaalo:  /student/*  → "student"
-//   const targetRole = location.pathname.split("/")[1] || "";
+//   // ✅ 1) Token check
+//   const isLoggedIn = auth.isAuthenticated();
 
-//   // Admin ko full access
-//   if (currentRole === "admin") {
+//   if (!isLoggedIn) {
+//     return <Navigate to="/login" state={{ from: location }} replace />;
+//   }
+
+//   // ✅ 2) Role from localStorage
+//   const role = localStorage.getItem("role");
+
+//   if (!role) {
+//     // token exists but role missing → force login
+//     return <Navigate to="/login" state={{ from: location }} replace />;
+//   }
+
+//   // ✅ 3) ADMIN can access everything (no restriction)
+//   if (role === "ADMIN") {
 //     return children;
 //   }
 
-//   // Non-admin sirf apna dashboard access karega
-//   if (!auth.canAccess(targetRole)) {
-//     return <Navigate to={`/${currentRole}`} replace />;
+//   // ✅ 4) If allowedRoles provided, check role
+//   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+//     // redirect to correct dashboard
+//     if (role === "STUDENT") return <Navigate to="/student" replace />;
+//     if (role === "TRAINER") return <Navigate to="/trainer" replace />;
+//     if (role === "BUSINESS") return <Navigate to="/business" replace />;
+
+//     return <Navigate to="/" replace />;
 //   }
 
+//   // ✅ allowed
 //   return children;
 // };
 
@@ -26,26 +43,40 @@
 import { Navigate, useLocation } from "react-router-dom";
 import auth from "../auth";
 
-const RoleGuard = ({ children }) => {
+const RoleGuard = ({ children, allowedRoles = [] }) => {
   const location = useLocation();
 
-  // 🔐 Current role from token / storage
-  const currentRoleRaw = auth.getCurrentRole(); // e.g. "ADMIN" / "admin"
-  const currentRole = currentRoleRaw?.toLowerCase(); // ✅ normalize
+  // ✅ 1) Token check
+  const isLoggedIn = auth.isAuthenticated();
 
-  // 🌐 Target role from URL: /admin/* → "admin"
-  const targetRole = location.pathname.split("/")[1]?.toLowerCase() || "";
+  if (!isLoggedIn) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
-  // 🟢 ADMIN has full access
-  if (currentRole === "admin") {
+  // ✅ 2) Role from localStorage
+  const role = localStorage.getItem("role");
+
+  if (!role) {
+    // token exists but role missing → force login
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // ✅ 3) ADMIN can access everything (no restriction)
+  if (role === "ADMIN") {
     return children;
   }
 
-  // 🔒 Non-admin users: allow only their own section
-  if (currentRole !== targetRole) {
-    return <Navigate to={`/${currentRole}`} replace />;
+  // ✅ 4) If allowedRoles provided, check role
+  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+    // redirect to correct dashboard
+    if (role === "STUDENT") return <Navigate to="/student" replace />;
+    if (role === "TRAINER") return <Navigate to="/trainer" replace />;
+    if (role === "BUSINESS") return <Navigate to="/business" replace />;
+
+    return <Navigate to="/" replace />;
   }
 
+  // ✅ allowed
   return children;
 };
 

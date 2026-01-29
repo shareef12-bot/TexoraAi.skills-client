@@ -123,6 +123,21 @@ const authService = {
     );
   },
 
+  // ================= VERIFY EMAIL =================
+  verifyEmail(token, email) {
+    return axios.post(`${API_BASE_URL}/api/auth/verify-email`, {
+      token,
+      email,
+    });
+  },
+
+  // ================= RESEND VERIFICATION =================
+  resendVerification(email) {
+    return axios.post(`${API_BASE_URL}/api/auth/resend-verification`, {
+      email,
+    });
+  },
+
   // ================= TOKEN HELPERS =================
   saveToken(token) {
     localStorage.setItem("lms_token", token);
